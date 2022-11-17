@@ -1,0 +1,19 @@
+{
+  "name": "vlive-downloader",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node ./dist/index.js",
+    "dev": "nodemon --watch 'src/**/*' ./src/index.ts",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/cli-progress": "^3.11.0",
+    "@types/needle": "^2.5.3",
+    "@types/node": "^18.11.9",
+    "typescript": "^4.9.3"
+  },
+  "dependencies": {
+    "cli-progress": "^3.11.2",
+    "needle": "^3.1.0"
+  }
+}
