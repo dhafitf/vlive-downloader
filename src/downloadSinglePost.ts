@@ -26,8 +26,9 @@ const downloadSinglePost = async (vliveUrl: string) => {
       fs.mkdirSync(validPath);
     }
 
-    console.log("Download captions started");
-    for (let caption of downloader.videoData.data.captions) {
+    const captionsList = downloader.videoData.data.captions
+    captionsList.length && console.log("Download captions started");
+    for (let caption of captionsList) {
       const url = caption.source;
       const data = await needle("get", url).then((res) => res.body);
 
@@ -37,14 +38,18 @@ const downloadSinglePost = async (vliveUrl: string) => {
 
       fs.writeFileSync(`./${validPath}/${validPath}_${filename.join("_")}`, data);
     }
-    console.log("Download captions finished");
+    captionsList.length && console.log("Download captions finished");
 
     let data = JSON.stringify(downloader.videoData.data, null, 2);
     fs.writeFileSync(`./${validPath}/videoData.json`, data);
 
     const progressBar = new cliProgress.SingleBar(
       {
-        format: "{bar} {percentage}% | ETA: {eta}s | Speed: {speed}",
+        format: "[\u001b[32m{bar}\u001b[0m] {percentage}% | ETA: {eta}s | {value}/{total} => " + downloader.videoData.data.title,
+        barCompleteChar: "\u2588",
+        barIncompleteChar: "\u2591",
+        hideCursor: true,
+        barGlue: '\u001b[33m'
       },
       cliProgress.Presets.shades_classic
     );
