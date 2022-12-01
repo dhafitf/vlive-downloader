@@ -71,7 +71,7 @@ export class VliveDownloader {
 
     const highestQuality = this.getDownloadableVideo(data);
     this.videoData.setDuration(highestQuality.duration);
-    this.videoData.addCaptions(
+    data.captions && this.videoData.addCaptions(
       data.captions.list.map((caption: Caption) => ({
         language: caption.language,
         locale: caption.locale,
