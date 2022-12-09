@@ -21,13 +21,12 @@ const downloadSinglePost = async (vliveUrl: string) => {
     await downloader.getVideoMetaData();
     downloader.withCategory();
 
-    const validPath = path.normalize(downloader.videoData.data.title.replace(/"/g, ""));
+    const validPath = path.normalize(downloader.videoData.data.title.replace(/[^a-zA-Z0-9 ]/g, ""));
     if (!fs.existsSync(validPath)) {
       fs.mkdirSync(validPath);
     }
 
-    const captionsList = downloader.videoData.data.captions
-    captionsList.length && console.log("Download captions started");
+    const captionsList = downloader.videoData.data.captions;
     for (let caption of captionsList) {
       const url = caption.source;
       const data = await needle("get", url).then((res) => res.body);
@@ -38,7 +37,6 @@ const downloadSinglePost = async (vliveUrl: string) => {
 
       fs.writeFileSync(`./${validPath}/${validPath}_${filename.join("_")}`, data);
     }
-    captionsList.length && console.log("Download captions finished");
 
     let data = JSON.stringify(downloader.videoData.data, null, 2);
     fs.writeFileSync(`./${validPath}/videoData.json`, data);
@@ -49,7 +47,7 @@ const downloadSinglePost = async (vliveUrl: string) => {
         barCompleteChar: "\u2588",
         barIncompleteChar: "\u2591",
         hideCursor: true,
-        barGlue: '\u001b[33m'
+        barGlue: "\u001b[33m",
       },
       cliProgress.Presets.shades_classic
     );
@@ -71,6 +69,8 @@ const downloadSinglePost = async (vliveUrl: string) => {
       .on("done", function (err) {
         progressBar.stop();
       });
+
+    return Promise.resolve(true);
   } catch (error) {
     console.log(error);
   }
