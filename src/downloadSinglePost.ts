@@ -9,11 +9,6 @@ const downloadSinglePost = async (vliveUrl: string, callback: any) => {
     const isVliveUrl = vliveUrl.includes('vlive.tv/post');
     let postId = '';
 
-    // if (isVliveUrl) {
-    //   // postId = vliveUrl.split('/').pop() as string;
-    // } else {
-    //   throw new Error('Not vlive url');
-    // }
 
     if (!isVliveUrl) throw new Error('Not vlive url');
     postId = vliveUrl.split('/').pop() as string;
