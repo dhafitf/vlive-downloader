@@ -4,16 +4,13 @@ import fs from "fs";
 import path from "path";
 import { VliveDownloader } from "./vliveDownloader";
 
-const downloadSinglePost = async (vliveUrl: string) => {
+const downloadSinglePost = async (vliveUrl: string, callback = () => {}) => {
   try {
     const isVliveUrl = vliveUrl.includes("vlive.tv/post");
     let postId = "";
 
-    if (isVliveUrl) {
-      postId = vliveUrl.split("/").pop() as string;
-    } else {
-      throw new Error("Not vlive url");
-    }
+    if (!isVliveUrl) throw new Error("Not vlive url");
+    postId = vliveUrl.split("/").pop() as string;
 
     const downloader = new VliveDownloader(postId);
     await downloader.getPostData();
@@ -21,10 +18,18 @@ const downloadSinglePost = async (vliveUrl: string) => {
     await downloader.getVideoMetaData();
     downloader.withCategory();
 
-    const validPath = path.normalize(downloader.videoData.data.title.replace(/[^a-zA-Z0-9 ]/g, ""));
-    if (!fs.existsSync(validPath)) {
-      fs.mkdirSync(validPath);
+    const sanitizeString = (str: string) => path.normalize(str.replace(/[`~!@#$%^&*_|+\=?;:'",.<>{}\/]/gi, ""));
+    const dateNamePath =
+      new Date(downloader.videoData.data.createdAt).toISOString().substring(0, 10) + "-" + sanitizeString(downloader.videoData.data.title);
+    const namePath = path.join(dateNamePath);
+    console.log(namePath);
+
+    if (!fs.existsSync(`./videos/${namePath}`)) {
+      fs.mkdirSync(`./videos/${namePath}`);
+      console.log(`'/videos/${namePath}' folder has been created`);
     }
+
+    const vidioPath = `./videos/${namePath}`;
 
     const captionsList = downloader.videoData.data.captions;
     for (let caption of captionsList) {
@@ -35,11 +40,11 @@ const downloadSinglePost = async (vliveUrl: string) => {
       const filename = splitedUrl.split("_");
       filename.shift();
 
-      fs.writeFileSync(`./${validPath}/${validPath}_${filename.join("_")}`, data);
+      fs.writeFileSync(`${vidioPath}/${filename.join("_")}`, data);
     }
 
     let data = JSON.stringify(downloader.videoData.data, null, 2);
-    fs.writeFileSync(`./${validPath}/videoData.json`, data);
+    fs.writeFileSync(`${vidioPath}/videoData.json`, data);
 
     const progressBar = new cliProgress.SingleBar(
       {
@@ -53,7 +58,8 @@ const downloadSinglePost = async (vliveUrl: string) => {
     );
 
     let receivedBytes = 0;
-    const videoPath = path.resolve(`${validPath}`, `${validPath}.mp4`);
+
+    const videoDownloadPath = path.resolve(`${vidioPath}`, `${sanitizeString(downloader.videoData.data.title)}.mp4`);
 
     needle
       .get(downloader.videoUrl!)
@@ -65,9 +71,10 @@ const downloadSinglePost = async (vliveUrl: string) => {
         receivedBytes += chunk.length;
         progressBar.update(receivedBytes);
       })
-      .pipe(fs.createWriteStream(videoPath))
+      .pipe(fs.createWriteStream(videoDownloadPath))
       .on("done", function (err) {
         progressBar.stop();
+        callback();
       });
 
     return Promise.resolve(true);

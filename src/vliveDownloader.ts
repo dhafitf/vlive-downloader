@@ -5,7 +5,7 @@ import type { Caption } from "./types/videoTypes";
 export class VliveDownloader {
   private postId: string;
   private videoSeq?: string;
-  private videoKey?: any;
+  private videoKey?: string;
   private officialVideo?: any;
   public videoUrl?: string;
   constructor(postId: string) {
@@ -19,6 +19,7 @@ export class VliveDownloader {
       method: "GET",
       headers: {
         Referer: `https://www.vlive.tv/post/${this.postId}`,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
       },
     };
   }
@@ -71,16 +72,17 @@ export class VliveDownloader {
 
     const highestQuality = this.getDownloadableVideo(data);
     this.videoData.setDuration(highestQuality.duration);
-    data.captions && this.videoData.addCaptions(
-      data.captions.list.map((caption: Caption) => ({
-        language: caption.language,
-        locale: caption.locale,
-        label: caption.label,
-        type: caption.type,
-        source: caption.source,
-        fanName: caption.fanName,
-      }))
-    );
+    data.captions &&
+      this.videoData.addCaptions(
+        data.captions.list.map((caption: Caption) => ({
+          language: caption.language,
+          locale: caption.locale,
+          label: caption.label,
+          type: caption.type,
+          source: caption.source,
+          fanName: caption.fanName,
+        }))
+      );
 
     this.videoUrl = highestQuality.source;
 
