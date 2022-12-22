@@ -1,17 +1,16 @@
-import needle from 'needle';
-import cliProgress from 'cli-progress';
-import fs from 'fs';
-import path from 'path';
-import { VliveDownloader } from './vliveDownloader';
+import needle from "needle";
+import cliProgress from "cli-progress";
+import fs from "fs";
+import path from "path";
+import { VliveDownloader } from "./vliveDownloader";
 
-const downloadSinglePost = async (vliveUrl: string, callback: any) => {
+const downloadSinglePost = async (vliveUrl: string, callback = () => {}) => {
   try {
-    const isVliveUrl = vliveUrl.includes('vlive.tv/post');
-    let postId = '';
+    const isVliveUrl = vliveUrl.includes("vlive.tv/post");
+    let postId = "";
 
-
-    if (!isVliveUrl) throw new Error('Not vlive url');
-    postId = vliveUrl.split('/').pop() as string;
+    if (!isVliveUrl) throw new Error("Not vlive url");
+    postId = vliveUrl.split("/").pop() as string;
 
     const downloader = new VliveDownloader(postId);
     await downloader.getPostData();
@@ -19,14 +18,15 @@ const downloadSinglePost = async (vliveUrl: string, callback: any) => {
     await downloader.getVideoMetaData();
     downloader.withCategory();
 
-
-    const sanitizeString = (str: string) => path.normalize(str.replace(/[`~!@#$%^&*_|+\-=?;:'",.<>{}\/]/gi, ""));
+    const sanitizeString = (str: string) => path.normalize(str.replace(/[`~!@#$%^&*_|+\=?;:'",.<>{}\/]/gi, ""));
     const dateNamePath =
-      new Date(downloader.videoData.data.createdAt).toISOString().substring(0, 10) + " " + sanitizeString(downloader.videoData.data.title);
+      new Date(downloader.videoData.data.createdAt).toISOString().substring(0, 10) + "-" + sanitizeString(downloader.videoData.data.title);
     const namePath = path.join(dateNamePath);
+    console.log(namePath);
+
     if (!fs.existsSync(`./videos/${namePath}`)) {
       fs.mkdirSync(`./videos/${namePath}`);
-      console.log(`Create folder : '/videos/${namePath}'`);
+      console.log(`'/videos/${namePath}' folder has been created`);
     }
 
     const vidioPath = `./videos/${namePath}`;
@@ -34,13 +34,13 @@ const downloadSinglePost = async (vliveUrl: string, callback: any) => {
     const captionsList = downloader.videoData.data.captions;
     for (let caption of captionsList) {
       const url = caption.source;
-      const data = await needle('get', url).then((res) => res.body);
+      const data = await needle("get", url).then((res) => res.body);
 
-      const splitedUrl = url.split('/').pop() as string;
-      const filename = splitedUrl.split('_');
+      const splitedUrl = url.split("/").pop() as string;
+      const filename = splitedUrl.split("_");
       filename.shift();
 
-      fs.writeFileSync(`${vidioPath}/${filename.join('_')}`, data);
+      fs.writeFileSync(`${vidioPath}/${filename.join("_")}`, data);
     }
 
     let data = JSON.stringify(downloader.videoData.data, null, 2);
@@ -48,31 +48,31 @@ const downloadSinglePost = async (vliveUrl: string, callback: any) => {
 
     const progressBar = new cliProgress.SingleBar(
       {
-        format: '[\u001b[32m{bar}\u001b[0m] {percentage}% | ETA: {eta}s | {value}/{total} => ' + downloader.videoData.data.title,
-        barCompleteChar: '\u2588',
-        barIncompleteChar: '\u2591',
+        format: "[\u001b[32m{bar}\u001b[0m] {percentage}% | ETA: {eta}s | {value}/{total} => " + downloader.videoData.data.title,
+        barCompleteChar: "\u2588",
+        barIncompleteChar: "\u2591",
         hideCursor: true,
-        barGlue: '\u001b[33m',
+        barGlue: "\u001b[33m",
       },
       cliProgress.Presets.shades_classic
     );
 
     let receivedBytes = 0;
 
-    const videoDownloadPath = path.resolve(`${vidioPath}`, `${downloader.videoData.data.title}.mp4`);
+    const videoDownloadPath = path.resolve(`${vidioPath}`, `${sanitizeString(downloader.videoData.data.title)}.mp4`);
 
     needle
       .get(downloader.videoUrl!)
-      .on('response', (response) => {
-        const totalBytes = response.headers['content-length'];
+      .on("response", (response) => {
+        const totalBytes = response.headers["content-length"];
         progressBar.start(totalBytes, 0);
       })
-      .on('data', (chunk) => {
+      .on("data", (chunk) => {
         receivedBytes += chunk.length;
         progressBar.update(receivedBytes);
       })
       .pipe(fs.createWriteStream(videoDownloadPath))
-      .on('done', function (err) {
+      .on("done", function (err) {
         progressBar.stop();
         callback();
       });
