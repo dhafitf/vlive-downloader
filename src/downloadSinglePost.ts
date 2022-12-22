@@ -19,7 +19,6 @@ const downloadSinglePost = async (vliveUrl: string, callback: any) => {
     await downloader.getVideoMetaData();
     downloader.withCategory();
 
-    // const mainPath = path.normalize(downloader.videoData.data.title.replace(/[^a-zA-Z0-9 ]/g, ''));
 
     const dateNamePath = new Date(downloader.videoData.data.createdAt).toISOString().substr(0, 10) + ` - ${Math.random().toString(23).substring(2, 6)}`;
     const namePath = path.join(dateNamePath);
