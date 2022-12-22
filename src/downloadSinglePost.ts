@@ -20,7 +20,9 @@ const downloadSinglePost = async (vliveUrl: string, callback: any) => {
     downloader.withCategory();
 
 
-    const dateNamePath = new Date(downloader.videoData.data.createdAt).toISOString().substr(0, 10) + ` - ${Math.random().toString(23).substring(2, 6)}`;
+    const sanitizeString = (str: string) => path.normalize(str.replace(/[`~!@#$%^&*_|+\-=?;:'",.<>{}\/]/gi, ""));
+    const dateNamePath =
+      new Date(downloader.videoData.data.createdAt).toISOString().substring(0, 10) + " " + sanitizeString(downloader.videoData.data.title);
     const namePath = path.join(dateNamePath);
     if (!fs.existsSync(`./videos/${namePath}`)) {
       fs.mkdirSync(`./videos/${namePath}`);
